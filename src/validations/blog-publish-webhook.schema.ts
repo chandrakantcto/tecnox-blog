@@ -41,7 +41,7 @@ export const blogPublishWebhookSchema = z.object({
 
   /** Post title (required). Max 200 chars. */
   title: z
-    .string({ required_error: 'title is required' })
+    .string()
     .min(1, 'title cannot be empty')
     .max(200, 'title max 200 chars')
     .trim(),
@@ -55,11 +55,11 @@ export const blogPublishWebhookSchema = z.object({
 
   /** Full HTML/Markdown body (required). */
   content: z
-    .string({ required_error: 'content is required' })
+    .string()
     .min(1, 'content cannot be empty'),
 
   /** Short preview / description. Auto-generated from content when omitted. */
-  excerpt: z.string().max(500).optional(),
+  excerpt: z.string().optional(),
 
   // ── Taxonomy ───────────────────────────────────────────────────────────────
 
@@ -87,7 +87,7 @@ export const blogPublishWebhookSchema = z.object({
   featured_image: z.string().url('featured_image must be a valid URL').optional(),
 
   /** Alt text for featured image. */
-  featured_image_alt: z.string().max(200).optional(),
+  featured_image_alt: z.string().optional(),
 
   // ── Author ─────────────────────────────────────────────────────────────────
 
@@ -112,11 +112,11 @@ export const blogPublishWebhookSchema = z.object({
 
   // ── SEO ────────────────────────────────────────────────────────────────────
 
-  /** <title> tag override. Max 60 chars. */
-  meta_title: z.string().max(60).optional(),
+  /** <title> tag override. */
+  meta_title: z.string().optional(),
 
-  /** <meta name="description"> content. Max 160 chars. */
-  meta_description: z.string().max(160).optional(),
+  /** <meta name="description"> content. */
+  meta_description: z.string().optional(),
 
   /** Focus / target keywords. */
   keywords: z

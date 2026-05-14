@@ -13,7 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { AITask } from '@/models/AITask';
-import { Blog } from '@/models/Blog';
+import { Blog, type IBlogDocument } from '@/models/Blog';
 import { Category } from '@/models/Category';
 import { Tag } from '@/models/Tag';
 import { DifyService } from '@/services/dify.service';
@@ -130,7 +130,7 @@ async function handleDifyPayload(
       );
     }
 
-    const blog = await createBlogFromDifyData(task, validated.data, validated.workflow_run_id, payload);
+    const blog = await createBlogFromDifyData(task as unknown as Record<string, unknown>, validated.data, validated.workflow_run_id, payload);
 
     logWebhook('Blog published', {
       blogId: String(blog._id),
@@ -232,7 +232,7 @@ async function handleDummyPayload(
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function createBlogFromDifyData(
-  task: Awaited<ReturnType<typeof AITask.findById>>,
+  task: Record<string, unknown>,
   data: {
     title: string; slug?: string; excerpt?: string; content: string;
     meta_title?: string; meta_description?: string; keywords?: string[];
@@ -240,7 +240,7 @@ async function createBlogFromDifyData(
   },
   workflowRunId: string,
   rawPayload: Record<string, unknown>,
-) {
+): Promise<IBlogDocument> {
   if (!task) throw new Error('Task is null');
 
   const sanitizedContent = sanitizeHtml(data.content);
@@ -284,7 +284,7 @@ async function createBlogFromDifyData(
     content:       sanitizedContent,
     category:      categoryId ?? undefined,
     tags:          data.tags?.map((t) => generateSlug(t)) || [],
-    author:        task.createdBy,
+    author:        task.createdBy as string,
     seo: {
       metaTitle:       data.meta_title,
       metaDescription: data.meta_description,
@@ -293,7 +293,7 @@ async function createBlogFromDifyData(
     status:        'published',
     visibility:    'public',
     aiGenerated:   true,
-    aiTaskId:      task._id,
+    aiTaskId:      task._id as string,
     difyWorkflowId: workflowRunId,
     readingTime,
     publishedAt:   new Date(),

@@ -17,7 +17,8 @@ import { ZodError } from 'zod';
 
 const blogService = new BlogService();
 
-type RouteContext = { params: Promise<{ id: string }> };
+// Use Record<string, string> so the type is compatible with withErrorHandling's context signature
+type RouteContext = { params: Promise<Record<string, string>> };
 
 export const GET = withErrorHandling(
   async (_req: NextRequest, context?: RouteContext) => {

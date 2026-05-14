@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ── 4c. Resolve category ─────────────────────────────────────────────────
-    let categoryId: unknown = null;
+    let categoryId: string | null = null;
 
     if (input.category) {
       // Try slug match first, then name match (case-insensitive)
@@ -224,7 +224,7 @@ export async function POST(request: NextRequest) {
         await Category.findOne({ name: { $regex: new RegExp(`^${input.category}$`, 'i') } });
 
       if (cat) {
-        categoryId = cat._id;
+        categoryId = String(cat._id);
         log('Category resolved', { input: input.category, name: cat.name });
       } else {
         log('Category not found — will auto-create', { input: input.category });
@@ -234,7 +234,7 @@ export async function POST(request: NextRequest) {
           slug:     generateSlug(input.category),
           isActive: true,
         });
-        categoryId = newCat._id;
+        categoryId = String(newCat._id);
         log('Category created', { name: newCat.name, slug: newCat.slug });
       }
     }
@@ -243,18 +243,18 @@ export async function POST(request: NextRequest) {
     if (!categoryId) {
       const defaultCat = await Category.findOne({ isActive: true }).sort({ createdAt: 1 });
       if (defaultCat) {
-        categoryId = defaultCat._id;
+        categoryId = String(defaultCat._id);
         log('Using default category', { name: defaultCat.name });
       }
     }
 
     // ── 4d. Resolve author ───────────────────────────────────────────────────
-    let authorId: unknown = null;
+    let authorId: string | null = null;
 
     if (input.author_email) {
       const author = await User.findOne({ email: input.author_email.toLowerCase() });
       if (author) {
-        authorId = author._id;
+        authorId = String(author._id);
         log('Author resolved', { email: input.author_email });
       } else {
         log('Author email not found — using fallback', { email: input.author_email });
@@ -268,7 +268,7 @@ export async function POST(request: NextRequest) {
         await User.findOne({ role: 'admin',       isActive: true }) ||
         await User.findOne({ isActive: true });
       if (fallback) {
-        authorId = fallback._id;
+        authorId = String(fallback._id);
         log('Using fallback author', { email: fallback.email, role: fallback.role });
       }
     }
@@ -296,11 +296,11 @@ export async function POST(request: NextRequest) {
     }
 
     // ── 4f. Resolve linked AITask (optional) ─────────────────────────────────
-    let aiTaskId: unknown = null;
+    let aiTaskId: string | null = null;
     if (input.task_id) {
       const task = await AITask.findById(input.task_id).catch(() => null);
       if (task) {
-        aiTaskId = task._id;
+        aiTaskId = String(task._id);
         log('Linked to AITask', { taskId: input.task_id });
       } else {
         log('task_id provided but not found — ignoring', { taskId: input.task_id });

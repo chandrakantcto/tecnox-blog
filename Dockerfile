@@ -29,10 +29,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client if Prisma exists
-RUN if [ -f prisma/schema.prisma ]; then npx prisma generate; fi
-
-# Build Next.js
+# Build Next.js (MongoDB via Mongoose — no Prisma folder / COPY)
 RUN npm run build
 
 # ---------------------------------------------------
@@ -45,23 +42,28 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=80
 ENV NEXT_TELEMETRY_DISABLED=1
+# Listen on all interfaces so CapRover / Docker can route to the container
+ENV HOSTNAME=0.0.0.0
+
+RUN apk add --no-cache wget
 
 # Non-root user
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy standalone app
+# Copy standalone app (requires next.config: output: 'standalone')
 COPY --from=builder /app/public ./public
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Optional (if uploads or prisma used at runtime)
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-
 USER nextjs
 
 EXPOSE 80
+
+# Matches GET /api/health — tune interval/start-period for slow cold starts if needed
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:80/api/health || exit 1
 
 CMD ["node", "server.js"]

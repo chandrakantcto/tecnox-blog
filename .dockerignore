@@ -1,0 +1,41 @@
+# Dependencies & build output
+node_modules
+.next
+out
+dist
+coverage
+
+# Git & IDE
+.git
+.gitignore
+.cursor
+.idea
+.vscode
+
+# Env & secrets (CapRover injects at runtime — never bake into image)
+.env
+.env.*
+!.env.example
+
+# Tests & local tooling
+**/tests
+**/__tests__
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+playwright-report
+test-results
+vitest.config.ts
+playwright.config.ts
+
+# Docs & misc
+*.md
+!README.md
+docker-compose*.yml
+Dockerfile*
+!Dockerfile
+
+# Logs & caches
+npm-debug.log*
+.turbo
+.cache

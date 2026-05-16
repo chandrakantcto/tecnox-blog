@@ -1,42 +1,57 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI!;
-
-if (!MONGODB_URI) {
-  throw new Error('Please define MONGODB_URI in your environment variables');
-}
-
-interface MongooseCache {
-  conn: typeof mongoose | null;
-  promise: Promise<typeof mongoose> | null;
-}
-
 declare global {
   // eslint-disable-next-line no-var
-  var mongooseCache: MongooseCache;
+  var mongooseCache:
+    | {
+        conn: typeof mongoose | null;
+        promise: Promise<typeof mongoose> | null;
+      }
+    | undefined;
 }
 
-const cached: MongooseCache = global.mongooseCache || { conn: null, promise: null };
-global.mongooseCache = cached;
+let cached = global.mongooseCache;
 
-export async function connectToDatabase(): Promise<typeof mongoose> {
-  if (cached.conn) return cached.conn;
+if (!cached) {
+  cached = global.mongooseCache = {
+    conn: null,
+    promise: null,
+  };
+}
 
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
+/**
+ * Connect to MongoDB. Validates `MONGODB_URI` only when called — safe to import
+ * during `next build` when env vars are not injected yet (e.g. Docker/CapRover).
+ */
+export async function dbConnect(): Promise<typeof mongoose> {
+  const MONGODB_URI = process.env.MONGODB_URI;
+
+  if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI is missing');
+  }
+
+  if (cached!.conn) {
+    return cached!.conn;
+  }
+
+  if (!cached!.promise) {
+    cached!.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
-      maxPoolSize: 10,
+      maxPoolSize:    10,
     });
   }
 
   try {
-    cached.conn = await cached.promise;
+    cached!.conn = await cached!.promise;
   } catch (error) {
-    cached.promise = null;
+    cached!.promise = null;
     throw error;
   }
 
-  return cached.conn;
+  return cached!.conn;
 }
+
+/** Alias for `dbConnect` — same implementation */
+export const connectToDatabase = dbConnect;
 
 export default connectToDatabase;

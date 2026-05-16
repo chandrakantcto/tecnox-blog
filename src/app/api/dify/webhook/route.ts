@@ -12,6 +12,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
+
+export const dynamic = 'force-dynamic';
 import { AITask } from '@/models/AITask';
 import { Blog, type IBlogDocument } from '@/models/Blog';
 import { Category } from '@/models/Category';

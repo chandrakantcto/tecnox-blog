@@ -10,7 +10,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 
-  MONGODB_URI: z.string().min(1),
+  /** Empty during Docker/CapRover image build; must be set at runtime (validated in dbConnect). */
+  MONGODB_URI: z.string().default(''),
 
   NEXTAUTH_SECRET: z.string().min(1).default('dev-secret-at-least-32-chars-long!!'),
   NEXTAUTH_URL: z.string().url().default('http://localhost:3000'),
@@ -48,13 +49,23 @@ export type Env = z.infer<typeof envSchema>;
 
 function parseEnv(): Env {
   const result = envSchema.safeParse(process.env);
-  if (!result.success) {
-    console.error('Invalid environment variables:', result.error.format());
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('Invalid environment variables');
-    }
+  if (result.success) {
+    return result.data;
   }
-  return envSchema.parse(process.env);
+
+  // Do not throw during `next build`: CapRover/Docker often omit secrets until runtime.
+  console.warn(
+    'Environment validation warning (falling back to schema defaults):',
+    result.error.flatten(),
+  );
+
+  const fallback = envSchema.safeParse({});
+  if (fallback.success) {
+    return fallback.data;
+  }
+
+  console.error('Fatal: env defaults failed:', fallback.error.flatten());
+  throw new Error('Invalid environment configuration');
 }
 
 export const env = parseEnv();

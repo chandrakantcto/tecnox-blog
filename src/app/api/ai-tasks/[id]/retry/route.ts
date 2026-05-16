@@ -5,6 +5,8 @@ import { AITaskService } from '@/services/ai-task.service';
 import { successResponse, notFoundResponse, unauthorizedResponse } from '@/utils/api-response';
 import { withErrorHandling } from '@/utils/error-handler';
 
+export const dynamic = 'force-dynamic';
+
 const aiTaskService = new AITaskService();
 
 export const POST = withErrorHandling(
